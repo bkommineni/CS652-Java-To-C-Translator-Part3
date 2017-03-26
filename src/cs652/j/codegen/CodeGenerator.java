@@ -36,6 +36,7 @@ import cs652.j.semantics.JField;
 import cs652.j.semantics.JMethod;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
@@ -52,6 +53,96 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	public CodeGenerator(String fileName) {
 		this.fileName = fileName;
 		templates = new STGroupFile("cs652/j/templates/C.stg");
+	}
+
+	@Override
+	public OutputModelObject visitFile(JParser.FileContext ctx) {
+		currentScope = ctx.scope;
+		CFile file = new CFile(fileName);
+		for(ParseTree child : ctx.children)
+		{
+			OutputModelObject model = visit(child);
+			if(model instanceof ClassDef)
+			{
+				file.addClass((ClassDef) model);
+			}
+			else
+				file.addMain((MainMethod) model);
+		}
+		return file;
+	}
+
+	@Override
+	public OutputModelObject visitClassDeclaration(JParser.ClassDeclarationContext ctx) {
+		currentScope = ctx.scope;
+		currentClass = (JClass) currentScope;
+		return super.visitClassDeclaration(ctx);
+	}
+
+	@Override
+	public OutputModelObject visitClassBody(JParser.ClassBodyContext ctx) {
+		ClassDef classDef = new ClassDef(currentClass.getName());
+		for(JParser.ClassBodyDeclarationContext child : ctx.classBodyDeclaration())
+		{
+			OutputModelObject model = visit(child);
+			if(model instanceof VarDef)
+			{
+				classDef.addField((VarDef) model);
+			}
+			else
+			{
+				classDef.addMethod((MethodDef) model);
+				classDef.addFuncVtable(((MethodDef) model).funcName);
+			}
+		}
+		return classDef;
+	}
+
+	@Override
+	public OutputModelObject visitMethodDeclaration(JParser.MethodDeclarationContext ctx) {
+		FuncName funcName = new FuncName(ctx.ID().getText());
+		MethodDef methodDef = new MethodDef(funcName,ctx.getChild(0).getText());
+		methodDef.setClassName(currentClass.getName());
+		for(JParser.FormalParameterContext child : ctx.formalParameters().formalParameterList().formalParameter())
+		{
+			OutputModelObject model = visit(child);
+			methodDef.addArg((VarDef)model);
+		}
+		for(JParser.StatementContext child : ctx.methodBody().block().statement())
+		{
+			OutputModelObject model = visit(child);
+			methodDef.addBody((Stat)model);
+		}
+		return methodDef;
+	}
+
+	@Override
+	public OutputModelObject visitMain(JParser.MainContext ctx) {
+		currentScope = ctx.scope;
+		FuncName funcName = new FuncName("main");
+		MainMethod mainMethod = new MainMethod(funcName,"int");
+		VarDef varDef1 = new VarDef("int","argc");
+		VarDef varDef2 = new VarDef("char*","argv[]");
+		mainMethod.addArg(varDef1);
+		mainMethod.addArg(varDef2);
+		for(JParser.StatementContext child : ctx.block().statement())
+		{
+			OutputModelObject model = visit(child);
+			mainMethod.addBody((Stat)model);
+		}
+		return mainMethod;
+	}
+
+	@Override
+	public OutputModelObject visitFieldDeclaration(JParser.FieldDeclarationContext ctx) {
+		VarDef varDef = new VarDef(ctx.jType().getText(),ctx.ID().getText());
+		return varDef;
+	}
+
+	@Override
+	public OutputModelObject visitFormalParameter(JParser.FormalParameterContext ctx) {
+		VarDef varDef = new VarDef(ctx.jType().getText(),ctx.ID().getText());
+		return varDef;
 	}
 
 	public CFile generate(ParserRuleContext tree) {

@@ -18,26 +18,45 @@ object *alloc(metadata *clazz) {
     return p;
 }
 
-<classes>
+<classes : {classDef | <classDef><\n>}>
 
 <main>
 >>
 
 ClassDef(class, fields, methods, vtable) ::= <<
+typedef struct {
+    metadata *clazz;
+} <class.className>;
+
+<vtable : {funcName |  #define <class.className>_<funcName>_SLOT 0}>
+
+<methods : {methodDef | <methodDef><\n>}>
+
+void (*<class.className>_vtable[])() = {
+    <vtable : {funcName | (void (*)())&<class.className>_<funcName>,}>
+};
+
+metadata <class.className>_metadata = {"<class.className>", sizeof(<class.className>), &<class.className>_vtable};
 >>
 
 MethodDef(m,funcName,returnType,args,body) ::= <<
+<returnType> <m.className>_<funcName>(<args : {arg | <arg>,}>)
+<body>
 >>
 
 MainMethod(main,funcName,returnType,args,body) ::= <<
+<returnType> <funcName>(<args : {arg | <arg>,}>)
+<body>
 >>
 
 Block(block, locals, instrs) ::= <<
+<locals:{local | <local>;<\n>}>
+<instrs:{instr | <instr>;<\n>}>
 >>
 
-VarDef(var, type)   ::= ""
+VarDef(var, type)   ::= "<type> <var.id>"
 
-FuncName(f)         ::= ""
+FuncName(f)         ::= "<f.funcName>"
 
 ObjectTypeSpec(o)   ::= ""
 PrimitiveTypeSpec(p)::= "<p.name>"
