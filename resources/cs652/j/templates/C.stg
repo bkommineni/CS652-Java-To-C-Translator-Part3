@@ -18,8 +18,9 @@ object *alloc(metadata *clazz) {
     return p;
 }
 
-<classes : {classDef | <classDef><\n>}>
 
+
+<classes : {classDef | // D e f i n e  C l a s s  <classDef.class.className><\n><classDef><\n>}>
 <main>
 >>
 
@@ -28,32 +29,36 @@ typedef struct {
     metadata *clazz;
 } <class.className>;
 
-<vtable : {funcName |  #define <class.className>_<funcName>_SLOT 0}>
+<vtable : {funcName | #define <class.className>_<funcName>_SLOT 0}>
 
-<methods : {methodDef | <methodDef><\n>}>
+<methods; separator="\n">
 
 void (*<class.className>_vtable[])() = {
-    <vtable : {funcName | (void (*)())&<class.className>_<funcName>,}>
+    <vtable : {funcName | (void (*)())&<class.className>_<funcName>}; separator=",">
 };
 
 metadata <class.className>_metadata = {"<class.className>", sizeof(<class.className>), &<class.className>_vtable};
 >>
 
 MethodDef(m,funcName,returnType,args,body) ::= <<
-<returnType> <m.className>_<funcName>(<args; separator={,}>)
-<body>
+<returnType> <m.className>_<funcName>(<args; separator={, }>)
+{
+    <body>
+}
 >>
 
 MainMethod(main,funcName,returnType,args,body) ::= <<
-<returnType> <funcName>(<args;separator={,}>)
-<body>
+<returnType> <funcName>(<args;separator={, }>)
+{
+    <body>
+    return 0;
+}
 >>
 
 Block(block, locals, instrs) ::= <<
-{
-    <locals;separator={;}>
-    <instrs;separator={;\n}>
-}
+<locals : {varDef | <varDef>;}; separator="\n">
+
+<instrs;separator="\n">
 >>
 
 VarDef(var, type)   ::= "<type> <var.id>"
@@ -64,13 +69,13 @@ ObjectTypeSpec(o)   ::= "<o.name> *"
 PrimitiveTypeSpec(p)::= "<p.name>"
 
 AssignStat(a,left,right) ::= "<left> = <right>;"
-PrintStringStat(p)  ::= "printf(\"<p.printStat>\");"
-PrintStat(p,args)   ::= "printf(\"<p.printStat>\",<args;separator={,}>);"
-CallStat(c,call)    ::= "<call>;"
+PrintStringStat(p)  ::= "printf(<p.printStat>);"
+PrintStat(p,args)   ::= "printf(<p.printStat>,<args;separator={, }>);"
+CallStat(c,call)    ::= "<call>"
 CtorCall(ctor)      ::= "alloc(&<ctor.classname>_metadata)"
 ReturnStat(r,expr)  ::= "return <expr>;"
 WhileStat(w,condition, stat) ::= <<
-while(condition)
+while(<condition>)
 {
     <stat>;
 }
@@ -99,8 +104,8 @@ VarRef(v)           ::= "<v.id>"
 FieldRef(f, object) ::= ""
 ThisRef(t)          ::= "this"
 MethodCall(m, receiver, receiverType, fptrType, args) ::= <<
-<receiver> = <receiverType>(*(<fptrType>)(<m.className>->clazz->vtable)[<m.className>_<m.name>_SLOT])(<args;separator={,}>);
+(*(<fptrType>)(*(<receiver>)->clazz->_vtable)[<m.classname>_<m.name>_SLOT])(<args;separator={,}>);
 >>
 
-FuncPtrType(f, returnType, argTypes) ::= "<returnType>(*)(<argTypes;separator={,}>)"
+FuncPtrType(f, returnType, argTypes) ::= "<returnType> (*)(<argTypes;separator={,}>)"
 TypeCast(cast, type, expr) ::= "((<type>)<expr>)"
