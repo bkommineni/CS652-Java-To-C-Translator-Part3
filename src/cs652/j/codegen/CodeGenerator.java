@@ -59,16 +59,12 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	public OutputModelObject visitFile(JParser.FileContext ctx) {
 		currentScope = ctx.scope;
 		CFile file = new CFile(fileName);
-		for(ParseTree child : ctx.children)
+		for(JParser.ClassDeclarationContext child : ctx.classDeclaration())
 		{
 			OutputModelObject model = visit(child);
-			if(model instanceof ClassDef)
-			{
-				file.addClass((ClassDef) model);
-			}
-			else
-				file.addMain((MainMethod) model);
+			file.addClass((ClassDef) model);
 		}
+		file.addMain((MainMethod) visit(ctx.main()));
 		return file;
 	}
 
@@ -101,17 +97,37 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitMethodDeclaration(JParser.MethodDeclarationContext ctx) {
 		FuncName funcName = new FuncName(ctx.ID().getText());
-		MethodDef methodDef = new MethodDef(funcName,ctx.getChild(0).getText());
-		methodDef.setClassName(currentClass.getName());
+		MethodDef methodDef;
+		if(ctx.getChild(0).getText().equals("int") ||
+				ctx.getChild(0).getText().equals("float") ||
+				ctx.getChild(0).getText().equals("void"))
+		{
+			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.getChild(0).getText());
+			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
+		}
+		else
+		{
+			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.getChild(0).getText());
+			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
+		}
 		for(JParser.FormalParameterContext child : ctx.formalParameters().formalParameterList().formalParameter())
 		{
 			OutputModelObject model = visit(child);
 			methodDef.addArg((VarDef)model);
 		}
+		Block body = new Block();
+		methodDef.setBlock(body);
 		for(JParser.StatementContext child : ctx.methodBody().block().statement())
 		{
 			OutputModelObject model = visit(child);
-			methodDef.addBody((Stat)model);
+			if(model instanceof VarDef)
+			{
+				body.addLocal((VarDef)model);
+			}
+			else
+			{
+				body.addInstr((Stat)model);
+			}
 		}
 		return methodDef;
 	}
@@ -120,29 +136,119 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	public OutputModelObject visitMain(JParser.MainContext ctx) {
 		currentScope = ctx.scope;
 		FuncName funcName = new FuncName("main");
-		MainMethod mainMethod = new MainMethod(funcName,"int");
-		VarDef varDef1 = new VarDef("int","argc");
-		VarDef varDef2 = new VarDef("char*","argv[]");
+		PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec("int");
+		MainMethod mainMethod = new MainMethod(funcName,typeSpec);
+		VarDef varDef1 = new VarDef(new PrimitiveTypeSpec("int"),"argc");
+		VarDef varDef2 = new VarDef(new PrimitiveTypeSpec("char*"),"argv[]");
 		mainMethod.addArg(varDef1);
 		mainMethod.addArg(varDef2);
+		Block body = new Block();
+		mainMethod.setBlock(body);
 		for(JParser.StatementContext child : ctx.block().statement())
 		{
 			OutputModelObject model = visit(child);
-			mainMethod.addBody((Stat)model);
+			if(model instanceof VarDef)
+			{
+				body.addLocal((VarDef) model);
+			}
+			else
+			{
+				body.addInstr((Stat)model);
+			}
 		}
 		return mainMethod;
 	}
 
 	@Override
 	public OutputModelObject visitFieldDeclaration(JParser.FieldDeclarationContext ctx) {
-		VarDef varDef = new VarDef(ctx.jType().getText(),ctx.ID().getText());
+		VarDef varDef;
+		if(ctx.getChild(0).getText().equals("int") ||
+				ctx.getChild(0).getText().equals("float"))
+		{
+			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.getChild(0).getText());
+			varDef = new VarDef(typeSpec,ctx.ID().getText());
+		}
+		else
+		{
+			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.getChild(0).getText());
+			varDef = new VarDef(typeSpec,ctx.ID().getText());
+		}
 		return varDef;
 	}
 
 	@Override
 	public OutputModelObject visitFormalParameter(JParser.FormalParameterContext ctx) {
-		VarDef varDef = new VarDef(ctx.jType().getText(),ctx.ID().getText());
+		VarDef varDef;
+		if(ctx.getChild(0).getText().equals("int") ||
+				ctx.getChild(0).getText().equals("float"))
+		{
+			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.getChild(0).getText());
+			varDef = new VarDef(typeSpec,ctx.ID().getText());
+		}
+		else
+		{
+			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.getChild(0).getText());
+			varDef = new VarDef(typeSpec,ctx.ID().getText());
+		}
 		return varDef;
+	}
+
+	@Override
+	public OutputModelObject visitLocalVarStat(JParser.LocalVarStatContext ctx) {
+		VarDef varDef;
+		if(ctx.localVariableDeclaration().jType().getText().equals("int") ||
+				ctx.localVariableDeclaration().jType().getText().equals("float"))
+		{
+			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.localVariableDeclaration().jType().getText());
+			varDef = new VarDef(typeSpec,ctx.localVariableDeclaration().ID().getText());
+		}
+		else
+		{
+			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.localVariableDeclaration().jType().getText());
+			varDef = new VarDef(typeSpec,ctx.localVariableDeclaration().ID().getText());
+		}
+		return varDef;
+	}
+
+	@Override
+	public OutputModelObject visitCtorCall(JParser.CtorCallContext ctx) {
+		CtorCall ctorCall = new CtorCall(ctx.ID().getText());
+		return ctorCall;
+	}
+
+	@Override
+	public OutputModelObject visitAssignStat(JParser.AssignStatContext ctx) {
+		AssignStat assignStat ;
+		Expr left = (Expr) visit(ctx.expression(0));
+		Expr right = null;
+		if(ctx.expression(0).type.getName().equals(ctx.expression(1).type.getName()))
+		{
+			TypeCast typeCast;
+			if(ctx.expression(0).type.getName().equals("int") ||
+					ctx.expression(0).type.getName().equals("float"))
+			{
+				PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.expression(0).type.getName());
+				typeCast = new TypeCast(typeSpec,(Expr) visit(ctx.expression(1)));
+			}
+			else
+			{
+				ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.expression(0).type.getName());
+				typeCast = new TypeCast(typeSpec,(Expr) visit(ctx.expression(1)));
+			}
+			right = typeCast;
+		}
+		else
+		{
+			right = (Expr) visit(ctx.expression(1));
+		}
+		assignStat = new AssignStat(left,right);
+		return assignStat;
+	}
+
+	@Override
+	public OutputModelObject visitIdRef(JParser.IdRefContext ctx) {
+		VarRef varRef = new VarRef(ctx.ID().getText());
+		return varRef;
 	}
 
 	public CFile generate(ParserRuleContext tree) {

@@ -2,22 +2,25 @@ package cs652.j.codegen.model;
 
 import org.stringtemplate.v4.ST;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by bharu on 3/23/17.
  */
 public class MainMethod extends MethodDef {
 
-    public MainMethod(FuncName funcName, String returnType) {
+    public MainMethod(FuncName funcName, TypeSpec returnType) {
         super(funcName, returnType);
     }
 
-    @Override
-    public void addArg(VarDef varDef) {
-        super.addArg(varDef);
+    public void addArg(VarDef varDef)
+    {
+        args.add(varDef);
     }
 
-    @Override
-    public void addBody(Stat stat) {
-        super.addBody(stat);
+    public void setBlock(Block body)
+    {
+        this.body = body;
     }
 }

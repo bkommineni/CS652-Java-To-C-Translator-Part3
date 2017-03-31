@@ -11,11 +11,17 @@ import java.util.List;
 public class MethodDef extends OutputModelObject {
     public String className;
     @ModelElement public FuncName funcName;
-    @ModelElement public String returnType;
+    @ModelElement public TypeSpec returnType;
     @ModelElement public List<VarDef> args = new ArrayList<>();
-    @ModelElement public List<Stat> body = new ArrayList<>();
+    @ModelElement public Block body;
 
-    public MethodDef(FuncName funcName,String returnType) {
+    public MethodDef(String className,FuncName funcName,TypeSpec returnType) {
+        this.className = className;
+        this.funcName = funcName;
+        this.returnType = returnType;
+    }
+
+    public MethodDef(FuncName funcName,TypeSpec returnType) {
         this.funcName = funcName;
         this.returnType = returnType;
     }
@@ -25,13 +31,8 @@ public class MethodDef extends OutputModelObject {
         args.add(varDef);
     }
 
-    public void addBody(Stat stat)
+    public void setBlock(Block body)
     {
-        body.add(stat);
-    }
-
-    public void setClassName(String className)
-    {
-        this.className = className;
+        this.body = body;
     }
 }

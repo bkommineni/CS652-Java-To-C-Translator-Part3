@@ -6,5 +6,9 @@ import org.stringtemplate.v4.ST;
  * Created by bharu on 3/23/17.
  */
 public class PrintStringStat extends Stat {
+    public String printStmnt;
 
+    public PrintStringStat(String printStmnt) {
+        this.printStmnt = printStmnt;
+    }
 }
