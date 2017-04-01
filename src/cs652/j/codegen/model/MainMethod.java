@@ -10,8 +10,8 @@ import java.util.List;
  */
 public class MainMethod extends MethodDef {
 
-    public MainMethod(FuncName funcName, TypeSpec returnType) {
-        super(funcName, returnType);
+    public MainMethod() {
+        super();
     }
 
     public void addArg(VarDef varDef)

@@ -7,7 +7,15 @@ import org.stringtemplate.v4.ST;
  */
 public class FuncName extends OutputModelObject {
     public String funcName;
-    public FuncName(String funcName) {
+    public String className;
+    public FuncName(String className,String funcName)
+    {
+        this.className = className;
         this.funcName = funcName;
+    }
+
+    public String getFuncName()
+    {
+        return funcName;
     }
 }

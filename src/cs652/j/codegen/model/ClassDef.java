@@ -3,7 +3,9 @@ package cs652.j.codegen.model;
 import org.stringtemplate.v4.ST;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by bharu on 3/23/17.
@@ -31,5 +33,22 @@ public class ClassDef extends OutputModelObject {
     public void addFuncVtable(FuncName funcName)
     {
         vtable.add(funcName);
+    }
+
+    public boolean checkIfMethodOverridden(String funcName)
+    {
+        for(int i=0;i<vtable.size();i++)
+        {
+            if(vtable.get(i).funcName.equals(funcName))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<FuncName> getVtable()
+    {
+        return vtable;
     }
 }

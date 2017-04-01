@@ -27,15 +27,14 @@ object *alloc(metadata *clazz) {
 ClassDef(class, fields, methods, vtable) ::= <<
 typedef struct {
     metadata *clazz;
+    <fields : {varDef | <varDef>;}; separator="\n">
 } <class.className>;
 
-<vtable : {funcName | #define <class.className>_<funcName>_SLOT 0}>
+
 
 <methods; separator="\n">
 
-void (*<class.className>_vtable[])() = {
-    <vtable : {funcName | (void (*)())&<class.className>_<funcName>}; separator=",">
-};
+<vtable.keys:{k | #define <class.className>_<k>_SLOT : <vtable.(k)>}>
 
 metadata <class.className>_metadata = {"<class.className>", sizeof(<class.className>), &<class.className>_vtable};
 >>
@@ -48,7 +47,7 @@ MethodDef(m,funcName,returnType,args,body) ::= <<
 >>
 
 MainMethod(main,funcName,returnType,args,body) ::= <<
-<returnType> <funcName>(<args;separator={, }>)
+int main(int argc, char *argv[])
 {
     <body>
     return 0;
@@ -63,14 +62,14 @@ Block(block, locals, instrs) ::= <<
 
 VarDef(var, type)   ::= "<type> <var.id>"
 
-FuncName(f)         ::= "<f.funcName>"
+FuncName(f)         ::= "<f.className>_<f.funcName>"
 
 ObjectTypeSpec(o)   ::= "<o.name> *"
 PrimitiveTypeSpec(p)::= "<p.name>"
 
 AssignStat(a,left,right) ::= "<left> = <right>;"
 PrintStringStat(p)  ::= "printf(<p.printStat>);"
-PrintStat(p,args)   ::= "printf(<p.printStat>,<args;separator={, }>);"
+PrintStat(p,args)   ::= "printf(<p.printStat>, <args;separator={, }>);"
 CallStat(c,call)    ::= "<call>"
 CtorCall(ctor)      ::= "alloc(&<ctor.classname>_metadata)"
 ReturnStat(r,expr)  ::= "return <expr>;"
@@ -101,10 +100,10 @@ NullRef(n)          ::= "NULL"
 
 LiteralRef(lit)     ::= "<lit.id>"
 VarRef(v)           ::= "<v.id>"
-FieldRef(f, object) ::= ""
+FieldRef(f, object) ::= "<object>-><f.id>"
 ThisRef(t)          ::= "this"
 MethodCall(m, receiver, receiverType, fptrType, args) ::= <<
-(*(<fptrType>)(*(<receiver>)->clazz->_vtable)[<m.classname>_<m.name>_SLOT])(<args;separator={,}>);
+(*(<fptrType>)(*(<receiver>)->clazz->_vtable)[<m.classname>_<m.name>_SLOT])(<args;separator={,}>)
 >>
 
 FuncPtrType(f, returnType, argTypes) ::= "<returnType> (*)(<argTypes;separator={,}>)"
