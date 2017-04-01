@@ -87,7 +87,19 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			{
 				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
 				FuncName funcName = new FuncName(jMethod.getEnclosingScope().getName(),methodSymbol.getName());
+				funcName.setSlot(jMethod.getSlotNumber());
 				classDef.addFuncVtable(funcName);
+			}
+
+			for(MethodSymbol methodSymbol : currentClass.getMethods())
+			{
+				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
+				if(!classDef.checkDuplicate(methodSymbol.getName()))
+				{
+					FuncName funcName = new FuncName(jMethod.getEnclosingScope().getName(), methodSymbol.getName());
+					funcName.setSlot(jMethod.getSlotNumber());
+					classDef.addFuncVtable(funcName);
+				}
 			}
 		}
 		else
@@ -96,6 +108,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			{
 				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
 				FuncName funcName = new FuncName(jMethod.getEnclosingScope().getName(),methodSymbol.getName());
+				funcName.setSlot(jMethod.getSlotNumber());
 				classDef.addFuncVtable(funcName);
 			}
 		}
@@ -121,8 +134,6 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.getChild(0).getText());
 			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
 		}
-		JMethod method = (JMethod) currentScope.resolve(ctx.ID().getText());
-		methodDef.setSlot(method.getSlotNumber());
 		ObjectTypeSpec typeSpec = new ObjectTypeSpec(currentClass.getName());
 		VarDef varDef = new VarDef(typeSpec,"this");
 		methodDef.addArg(varDef);
@@ -277,8 +288,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	public OutputModelObject visitQMethodCall(JParser.QMethodCallContext ctx) {
 
 		MethodCall methodCall = new MethodCall(ctx.ID().getText(),ctx.expression().type.getName());
-		VarRef varRef = new VarRef(ctx.expression().getText());
-		methodCall.setReceiver(varRef);
+		methodCall.setReceiver((Expr)visit(ctx.expression()));
 		FuncPtrType funcPtrType = null;
 		if(ctx.type.getName().equals("int") ||
 				ctx.type.getName().equals("float") ||

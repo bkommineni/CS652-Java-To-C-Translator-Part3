@@ -8,14 +8,15 @@ import org.stringtemplate.v4.ST;
 public class FuncName extends OutputModelObject {
     public String fName;
     public String className;
+    public int slot;
     public FuncName(String className,String fName)
     {
         this.className = className;
         this.fName = fName;
     }
 
-    public String getFuncName()
+    public void setSlot(int slot)
     {
-        return fName;
+        this.slot = slot;
     }
 }

@@ -11,7 +11,7 @@ import java.util.List;
 public class MethodCall extends Expr {
     public String name;
     public String classname;
-    @ModelElement public VarRef receiver;
+    @ModelElement public Expr receiver;
     @ModelElement public TypeSpec receiverType;
     @ModelElement public FuncPtrType fptrType;
     @ModelElement public List<Expr> args = new ArrayList<>();
@@ -21,7 +21,7 @@ public class MethodCall extends Expr {
         this.classname = classname;
     }
 
-    public void setReceiver(VarRef receiver) {
+    public void setReceiver(Expr receiver) {
         this.receiver = receiver;
     }
 

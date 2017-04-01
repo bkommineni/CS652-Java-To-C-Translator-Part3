@@ -30,7 +30,7 @@ typedef struct {
     <fields : {varDef | <varDef>;}; separator="\n">
 } <class.className>;
 
-<methods : {method | #define <class.className>_<method.funcName.f.fName>_SLOT <method.m.slot>}; separator="\n">
+<vtable : {v | #define <class.className>_<v.f.fName>_SLOT <v.f.slot>}; separator="\n">
 
 <methods; separator="\n">
 
@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
 
 Block(block, locals, instrs) ::= <<
 <locals : {varDef | <varDef>;}; separator="\n">
-
 <instrs;separator="\n">
 >>
 
@@ -74,7 +73,7 @@ AssignStat(a,left,right) ::= "<left> = <right>;"
 PrintStringStat(p)  ::= "printf(<p.printStat>);"
 PrintStat(p,args)   ::= "printf(<p.printStat>, <args;separator={, }>);"
 CallStat(c,call)    ::= "<call>;"
-CtorCall(ctor)      ::= "alloc(&<ctor.classname>_metadata);"
+CtorCall(ctor)      ::= "alloc(&<ctor.classname>_metadata)"
 ReturnStat(r,expr)  ::= "return <expr>;"
 WhileStat(w,condition, stat) ::= <<
 while(<condition>)

@@ -10,7 +10,6 @@ import java.util.List;
  */
 public class MethodDef extends OutputModelObject {
     public String className;
-    public int slot;
     @ModelElement public FuncName funcName;
     @ModelElement public TypeSpec returnType;
     @ModelElement public List<VarDef> args = new ArrayList<>();
@@ -38,10 +37,5 @@ public class MethodDef extends OutputModelObject {
     public void setBlock(Block body)
     {
         this.body = body;
-    }
-
-    public void setSlot(int slot)
-    {
-        this.slot = slot;
     }
 }

@@ -34,4 +34,16 @@ public class ClassDef extends OutputModelObject {
     {
         vtable.add(funcName);
     }
+
+    public boolean checkDuplicate(String funcName)
+    {
+        for(int i=0;i<vtable.size();i++)
+        {
+            if(vtable.get(i).fName.equals(funcName))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
