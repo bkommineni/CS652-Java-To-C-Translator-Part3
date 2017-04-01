@@ -34,21 +34,4 @@ public class ClassDef extends OutputModelObject {
     {
         vtable.add(funcName);
     }
-
-    public boolean checkIfMethodOverridden(String funcName)
-    {
-        for(int i=0;i<vtable.size();i++)
-        {
-            if(vtable.get(i).funcName.equals(funcName))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public List<FuncName> getVtable()
-    {
-        return vtable;
-    }
 }

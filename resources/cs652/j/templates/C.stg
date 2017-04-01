@@ -30,17 +30,20 @@ typedef struct {
     <fields : {varDef | <varDef>;}; separator="\n">
 } <class.className>;
 
-
+<methods : {method | #define <class.className>_<method.funcName.f.fName>_SLOT <method.m.slot>}; separator="\n">
 
 <methods; separator="\n">
 
-<vtable.keys:{k | #define <class.className>_<k>_SLOT : <vtable.(k)>}>
+void (*<class.className>_vtable[])() = {
+    <vtable : {funcName | (void (*)())&<funcName>}; separator=",\n">
+};
 
 metadata <class.className>_metadata = {"<class.className>", sizeof(<class.className>), &<class.className>_vtable};
+
 >>
 
 MethodDef(m,funcName,returnType,args,body) ::= <<
-<returnType> <m.className>_<funcName>(<args; separator={, }>)
+<returnType> <funcName>(<args; separator={, }>)
 {
     <body>
 }
@@ -62,7 +65,7 @@ Block(block, locals, instrs) ::= <<
 
 VarDef(var, type)   ::= "<type> <var.id>"
 
-FuncName(f)         ::= "<f.className>_<f.funcName>"
+FuncName(f)         ::= "<f.className>_<f.fName>"
 
 ObjectTypeSpec(o)   ::= "<o.name> *"
 PrimitiveTypeSpec(p)::= "<p.name>"
@@ -70,29 +73,29 @@ PrimitiveTypeSpec(p)::= "<p.name>"
 AssignStat(a,left,right) ::= "<left> = <right>;"
 PrintStringStat(p)  ::= "printf(<p.printStat>);"
 PrintStat(p,args)   ::= "printf(<p.printStat>, <args;separator={, }>);"
-CallStat(c,call)    ::= "<call>"
-CtorCall(ctor)      ::= "alloc(&<ctor.classname>_metadata)"
+CallStat(c,call)    ::= "<call>;"
+CtorCall(ctor)      ::= "alloc(&<ctor.classname>_metadata);"
 ReturnStat(r,expr)  ::= "return <expr>;"
 WhileStat(w,condition, stat) ::= <<
 while(<condition>)
 {
-    <stat>;
+    <stat>
 }
 >>
 IfStat(i,condition, stat) ::= <<
 if(<condition>)
 {
-    <stat> ;
+    <stat>
 }
 >>
 IfElseStat(i,condition, stat, elseStat) ::= <<
 if(<condition>)
 {
-    <stat> ;
+    <stat>
 }
 else
 {
-    <elseStat> ;
+    <elseStat>
 }
 >>
 

@@ -78,29 +78,25 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			else
 			{
 				classDef.addMethod((MethodDef) model);
-				classDef.addFuncVtable(((MethodDef) model).funcName);
 			}
 		}
-		if(ctx.superClass != null) {
-			JClass jClass = (JClass) currentScope.resolve(ctx.superClass.getText());
-			List<String> notOverriddenMethods = new ArrayList<>();
-			for (MethodSymbol methodSymbol : jClass.getMethods()) {
-				if (!classDef.checkIfMethodOverridden(methodSymbol.getName())) {
-					notOverriddenMethods.add(methodSymbol.getName());
-				}
-			}
 
-			List<FuncName> overriddenMethods = classDef.getVtable();
-
-			classDef.vtable = new ArrayList<>();
-
-			for (int i = 0; i < notOverriddenMethods.size(); i++) {
-				FuncName funcName = new FuncName(jClass.getName(), notOverriddenMethods.get(i));
+		if(ctx.superClass != null)
+		{
+			for(MethodSymbol methodSymbol :currentClass.getSuperClassScope().getMethods())
+			{
+				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
+				FuncName funcName = new FuncName(jMethod.getEnclosingScope().getName(),methodSymbol.getName());
 				classDef.addFuncVtable(funcName);
 			}
-
-			for (int i = 0; i < overriddenMethods.size(); i++) {
-				classDef.addFuncVtable(overriddenMethods.get(i));
+		}
+		else
+		{
+			for(MethodSymbol methodSymbol :currentClass.getMethods())
+			{
+				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
+				FuncName funcName = new FuncName(jMethod.getEnclosingScope().getName(),methodSymbol.getName());
+				classDef.addFuncVtable(funcName);
 			}
 		}
 		currentScope = currentScope.getEnclosingScope();
@@ -111,8 +107,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	public OutputModelObject visitMethodDeclaration(JParser.MethodDeclarationContext ctx) {
 		currentScope = ctx.scope;
 		FuncName funcName = new FuncName(currentClass.getName(),ctx.ID().getText());
-		JMethod method = (JMethod) currentScope.resolve(ctx.ID().getText());
-		System.out.println(currentClass + " "+ ctx.ID().getText() + " " + method.getSlotNumber());
+
 		MethodDef methodDef;
 		if(ctx.getChild(0).getText().equals("int") ||
 				ctx.getChild(0).getText().equals("float") ||
@@ -126,6 +121,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.getChild(0).getText());
 			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
 		}
+		JMethod method = (JMethod) currentScope.resolve(ctx.ID().getText());
+		methodDef.setSlot(method.getSlotNumber());
 		ObjectTypeSpec typeSpec = new ObjectTypeSpec(currentClass.getName());
 		VarDef varDef = new VarDef(typeSpec,"this");
 		methodDef.addArg(varDef);
@@ -202,7 +199,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitFormalParameter(JParser.FormalParameterContext ctx) {
-		VarDef varDef;
+		VarDef varDef = null;
 		if(ctx.getChild(0).getText().equals("int") ||
 				ctx.getChild(0).getText().equals("float"))
 		{
@@ -295,7 +292,9 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.type.getName());
 			funcPtrType = new FuncPtrType(typeSpec);
 		}
-		ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.expression().type.getName());
+		JClass jClass = (JClass) ctx.expression().type;
+		JMethod jMethod = (JMethod) jClass.resolveMember(ctx.ID().getText());
+		ObjectTypeSpec typeSpec = new ObjectTypeSpec(jMethod.getEnclosingScope().getName());
 		funcPtrType.addArgType(typeSpec);
 		TypeCast typeCast = new TypeCast(typeSpec,(Expr) visit(ctx.expression()));
 		methodCall.addArg(typeCast);
@@ -376,7 +375,6 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitMethodCall(JParser.MethodCallContext ctx) {
-		System.out.println(currentClass.getName() +" "+currentClass.resolveMethod(ctx.ID().getText()).getName());
 		MethodCall methodCall = new MethodCall(ctx.ID().getText(),currentClass.getName());
 		VarRef varRef = new VarRef("this");
 		methodCall.setReceiver(varRef);

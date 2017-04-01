@@ -6,16 +6,16 @@ import org.stringtemplate.v4.ST;
  * Created by bharu on 3/23/17.
  */
 public class FuncName extends OutputModelObject {
-    public String funcName;
+    public String fName;
     public String className;
-    public FuncName(String className,String funcName)
+    public FuncName(String className,String fName)
     {
         this.className = className;
-        this.funcName = funcName;
+        this.fName = fName;
     }
 
     public String getFuncName()
     {
-        return funcName;
+        return fName;
     }
 }
