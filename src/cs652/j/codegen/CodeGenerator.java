@@ -48,6 +48,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		currentClass = (JClass) currentScope;
 		ClassDef classDef = new ClassDef(currentClass.getName());
 
+		// if superclass is present;inheriting the fields from super class to base class
 		if(ctx.superClass != null)
 		{
 			JClass jClass = (JClass) currentScope.resolve(ctx.superClass.getText());
@@ -69,6 +70,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			}
 		}
 
+		//adding fields and methods of current class
 		for(JParser.ClassBodyDeclarationContext child : ctx.classBody().classBodyDeclaration())
 		{
 			OutputModelObject model = visit(child);
@@ -82,8 +84,14 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			}
 		}
 
+		//adding functions to vtable
+		//if superclass present;
 		if(ctx.superClass != null)
 		{
+			/**
+			 * getting all superclass methods and resolving from current scope; so that overridden methods
+			 * when resolved return the enclosing scope in which they are implemented
+			 */
 			for(MethodSymbol methodSymbol :currentClass.getSuperClassScope().getMethods())
 			{
 				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
@@ -92,6 +100,10 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 				classDef.addFuncVtable(funcName);
 			}
 
+			/**
+			 * To make sure not to miss the methods which are added to sub-classes explicity,checking current
+			 * class methods and making sure not to add the duplicates
+			 */
 			for(MethodSymbol methodSymbol : currentClass.getMethods())
 			{
 				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
@@ -105,6 +117,9 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		}
 		else
 		{
+			/**
+			 * if superclass is not present;adding the current class methods to vtable
+			 */
 			for(MethodSymbol methodSymbol :currentClass.getMethods())
 			{
 				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
@@ -120,9 +135,10 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitMethodDeclaration(JParser.MethodDeclarationContext ctx) {
 		currentScope = ctx.scope;
-		FuncName funcName = new FuncName(currentClass.getName(),ctx.ID().getText());
 
+		//adding method definition;funcName,Parameters,block
 		MethodDef methodDef;
+		FuncName funcName = new FuncName(currentClass.getName(),ctx.ID().getText());
 		if(ctx.getChild(0).getText().equals(JINT_TYPE.getName()) ||
 				ctx.getChild(0).getText().equals(JFLOAT_TYPE.getName()) ||
 				ctx.getChild(0).getText().equals(JVOID_TYPE.getName()))
@@ -146,6 +162,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			}
 		}
 		methodDef.setBlock((Block)visit(ctx.methodBody().block()));
+
 		currentScope = currentScope.getEnclosingScope();
 		return methodDef;
 	}
@@ -153,6 +170,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitBlock(JParser.BlockContext ctx) {
 		currentScope = ctx.scope;
+
+		//adding block;local variables and statements
 		Block body = new Block();
 		for(JParser.StatementContext child : ctx.statement())
 		{
@@ -166,6 +185,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 				body.addInstr((Stat)model);
 			}
 		}
+
 		currentScope = currentScope.getEnclosingScope();
 		return body;
 	}
@@ -173,28 +193,21 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitMain(JParser.MainContext ctx) {
 		currentScope = ctx.scope;
+
+		/**
+		 * adding main method;which has a standard function prototype
+		 * adding function block
+		 */
 		MainMethod mainMethod = new MainMethod();
-		Block body = new Block();
-		mainMethod.setBlock(body);
-		for(JParser.StatementContext child : ctx.block().statement())
-		{
-			OutputModelObject model = visit(child);
-			if(model instanceof VarDef)
-			{
-				body.addLocal((VarDef) model);
-			}
-			else
-			{
-				body.addInstr((Stat)model);
-			}
-		}
+		mainMethod.setBlock((Block) visit(ctx.block()));
+
 		currentScope = currentScope.getEnclosingScope();
 		return mainMethod;
 	}
 
 	@Override
 	public OutputModelObject visitFieldDeclaration(JParser.FieldDeclarationContext ctx) {
-		VarDef varDef;
+		VarDef varDef = null;
 		if(ctx.getChild(0).getText().equals(JINT_TYPE.getName()) ||
 				ctx.getChild(0).getText().equals(JFLOAT_TYPE.getName()))
 		{
@@ -245,8 +258,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitCtorCall(JParser.CtorCallContext ctx) {
-		CtorCall ctorCall = new CtorCall(ctx.ID().getText());
-		return ctorCall;
+		return new CtorCall(ctx.ID().getText());
 	}
 
 	@Override
@@ -255,6 +267,10 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		Expr left = (Expr) visit(ctx.expression(0));
 		Expr right = null;
 
+		/**
+		 * type-casting right expression if it is not primitive type with the
+		 * type of left expression
+		 */
 		TypeCast typeCast;
 		if(ctx.expression(0).type.getName().equals(JINT_TYPE.getName()) ||
 				ctx.expression(0).type.getName().equals(JFLOAT_TYPE.getName()))
@@ -274,10 +290,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitCallStat(JParser.CallStatContext ctx) {
-		CallStat callStat = null;
-		MethodCall model = (MethodCall) visit(ctx.expression());
-		callStat = new CallStat(model);
-		return callStat;
+		return new CallStat((MethodCall) visit(ctx.expression()));
 	}
 
 	@Override
@@ -298,6 +311,12 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.type.getName());
 			funcPtrType = new FuncPtrType(typeSpec);
 		}
+
+		/**
+		 * As converting from java to c;first argument always needs to be
+		 * of its own type;from receiver`s vtable,calculate receiverType to
+		 * implement polymorphism using resolve from the type of receiver;
+		 */
 		JClass jClass = (JClass) ctx.expression().type;
 		JMethod jMethod = (JMethod) jClass.resolveMember(ctx.ID().getText());
 		ObjectTypeSpec typeSpec = new ObjectTypeSpec(jMethod.getEnclosingScope().getName());
@@ -305,6 +324,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		TypeCast typeCast = new TypeCast(typeSpec,(Expr) visit(ctx.expression()));
 		methodCall.setReceiverType(typeCast);
 
+		//if arguments to methodcall are present
 		if(ctx.expressionList() != null)
 		{
 			for(JParser.ExpressionContext child : ctx.expressionList().expression())
@@ -321,6 +341,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 					ObjectTypeSpec objectTypeSpec = new ObjectTypeSpec(child.type.getName());
 					funcPtrType.addArgType(objectTypeSpec);
 				}
+				//to type cast if arguments are not literals to avoid warnings from compiler in c
 				if(!(model instanceof LiteralRef))
 				{
 					TypeCast typeCast1 = new TypeCast(new ObjectTypeSpec(child.type.getName()),(Expr)model);
@@ -340,6 +361,12 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitIdRef(JParser.IdRefContext ctx) {
 		Expr expr = null;
+
+		/**
+		 * if VarRefs does not belong to main method scope;they need to be accessed
+		 * with implicit this parameter of its own class type(FieldRefs), if not declared in
+		 * local scope or method scope
+		 */
 		if(!currentScope.getName().equals("main")) {
 			Symbol symbol = currentScope.resolve(ctx.ID().getText());
 			if (symbol.getScope().getName().equals(currentScope.getName()) ||
@@ -416,12 +443,20 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.type.getName());
 			funcPtrType = new FuncPtrType(typeSpec);
 		}
+
+		/**
+		 * As converting from java to c;first argument always needs to be
+		 * of its own type;from receiver`s vtable,calculate receiverType to
+		 * implement polymorphism using resolve from the type of receiver(as
+		 * this is a method call;receiver is object of its own class(this));
+		 */
 		JMethod jMethod = (JMethod) currentScope.resolve(ctx.ID().getText());
 		ObjectTypeSpec typeSpec = new ObjectTypeSpec(jMethod.getEnclosingScope().getName());
 		funcPtrType.addArgType(typeSpec);
 		TypeCast typeCast = new TypeCast(typeSpec,new ThisRef());
 		methodCall.setReceiverType(typeCast);
 
+		//if arguments to Methodcall are present
 		if(ctx.expressionList() != null)
 		{
 			for(JParser.ExpressionContext child : ctx.expressionList().expression())
@@ -438,6 +473,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 					ObjectTypeSpec objectTypeSpec = new ObjectTypeSpec(child.type.getName());
 					funcPtrType.addArgType(objectTypeSpec);
 				}
+				//type-casting arguments if they are not literals
 				if(!(model instanceof LiteralRef))
 				{
 					TypeCast typeCast1 = new TypeCast(new ObjectTypeSpec(child.type.getName()),(Expr)model);
@@ -456,8 +492,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitWhileStat(JParser.WhileStatContext ctx) {
-		WhileStat whileStat = null;
-		whileStat = new WhileStat((Expr) visit(ctx.parExpression().expression()),(Stat) visit(ctx.statement()));
+		WhileStat whileStat = new WhileStat((Expr) visit(ctx.parExpression().expression()),
+																(Stat) visit(ctx.statement()));
 		return whileStat;
 	}
 
@@ -484,6 +520,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitIfStat(JParser.IfStatContext ctx) {
 		IfStat ifStat = null;
+
+		//checking if else statement is present
 		if(ctx.getChild(3) != null)
 		{
 			Expr condition = (Expr) visit(ctx.parExpression().expression());
