@@ -83,19 +83,13 @@ while(<condition>)
 >>
 IfStat(i,condition, stat) ::= <<
 if(<condition>)
-{
     <stat>
-}
 >>
 IfElseStat(i,condition, stat, elseStat) ::= <<
 if(<condition>)
-{
     <stat>
-}
 else
-{
     <elseStat>
-}
 >>
 
 NullRef(n)          ::= "NULL"

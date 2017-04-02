@@ -336,8 +336,21 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitIdRef(JParser.IdRefContext ctx) {
-		VarRef varRef = new VarRef(ctx.ID().getText());
-		return varRef;
+		Expr expr = null;
+		if(!currentScope.getName().equals("main")) {
+			Symbol symbol = currentScope.resolve(ctx.ID().getText());
+			if (symbol.getScope().getName().equals(currentScope.getName()) ||
+					symbol.getScope().getName().equals(currentScope.getEnclosingScope().getName())) {
+				expr = new VarRef(ctx.ID().getText());
+			} else {
+				expr = new FieldRef(ctx.ID().getText(), new ThisRef());
+			}
+		}
+		else
+		{
+			expr = new VarRef(ctx.ID().getText());
+		}
+		return expr;
 	}
 
 	@Override
@@ -365,32 +378,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		PrintStat printStat = new PrintStat(ctx.STRING().getText());
 		for(JParser.ExpressionContext child : ctx.expressionList().expression())
 		{
-			OutputModelObject model = visit(child);
-
-			if((model instanceof VarRef) && !currentScope.getName().equals("main"))
-			{
-				boolean check = false;
-				for(Symbol symbol : currentScope.getEnclosingScope().getSymbols())
-				{
-					if(symbol.getName().equals(((VarRef) model).id))
-					{
-						check = true;
-					}
-				}
-				if(!check)
-				{
-					FieldRef fieldRef = new FieldRef(((VarRef) model).id,new ThisRef());
-					printStat.addArg(fieldRef);
-				}
-				else
-				{
-					printStat.addArg((Expr) model);
-				}
-			}
-			else
-			{
-				printStat.addArg((Expr) model);
-			}
+			printStat.addArg((Expr)visit(child));
 		}
 		return printStat;
 	}
@@ -400,31 +388,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		ReturnStat returnStat = null;
 		if(ctx.expression() != null)
 		{
-			OutputModelObject model = visit(ctx.expression());
-			if((model instanceof VarRef))
-			{
-				boolean check = false;
-				for(Symbol symbol : currentScope.getEnclosingScope().getSymbols())
-				{
-					if(symbol.getName().equals(((VarRef) model).id))
-					{
-						check = true;
-					}
-				}
-				if(!check)
-				{
-					FieldRef fieldRef = new FieldRef(((VarRef) model).id,new ThisRef());
-					returnStat = new ReturnStat(fieldRef);
-				}
-				else
-				{
-					returnStat = new ReturnStat((Expr) model);
-				}
-			}
-			else
-			{
-				returnStat = new ReturnStat((Expr) model);
-			}
+			returnStat = new ReturnStat((Expr)visit(ctx.expression()));
 		}
 		else
 		{
