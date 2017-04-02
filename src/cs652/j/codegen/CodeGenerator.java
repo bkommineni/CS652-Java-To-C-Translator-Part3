@@ -254,25 +254,20 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		AssignStat assignStat ;
 		Expr left = (Expr) visit(ctx.expression(0));
 		Expr right = null;
-		if(ctx.expression(0).type.getName().equals(ctx.expression(1).type.getName()))
-		{
-			TypeCast typeCast;
-			if(ctx.expression(0).type.getName().equals("int") ||
-					ctx.expression(0).type.getName().equals("float"))
-			{
-				right = (Expr) visit(ctx.expression(1));
-			}
-			else
-			{
-				ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.expression(0).type.getName());
-				typeCast = new TypeCast(typeSpec,(Expr) visit(ctx.expression(1)));
-				right = typeCast;
-			}
-		}
-		else
+
+		TypeCast typeCast;
+		if(ctx.expression(0).type.getName().equals("int") ||
+				ctx.expression(0).type.getName().equals("float"))
 		{
 			right = (Expr) visit(ctx.expression(1));
 		}
+		else
+		{
+			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.expression(0).type.getName());
+			typeCast = new TypeCast(typeSpec,(Expr) visit(ctx.expression(1)));
+			right = typeCast;
+		}
+
 		assignStat = new AssignStat(left,right);
 		return assignStat;
 	}
