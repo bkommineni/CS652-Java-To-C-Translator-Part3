@@ -326,7 +326,15 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 					ObjectTypeSpec objectTypeSpec = new ObjectTypeSpec(child.type.getName());
 					funcPtrType.addArgType(objectTypeSpec);
 				}
-				methodCall.addArg((Expr)model);
+				if(!(model instanceof LiteralRef))
+				{
+					TypeCast typeCast1 = new TypeCast(new ObjectTypeSpec(child.type.getName()),(Expr)model);
+					methodCall.addArg(typeCast1);
+				}
+				else
+				{
+					methodCall.addArg((Expr)model);
+				}
 			}
 		}
 		methodCall.setFptrType(funcPtrType);
@@ -437,7 +445,15 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 					ObjectTypeSpec objectTypeSpec = new ObjectTypeSpec(child.type.getName());
 					funcPtrType.addArgType(objectTypeSpec);
 				}
-				methodCall.addArg((Expr)model);
+				if(!(model instanceof LiteralRef))
+				{
+					TypeCast typeCast1 = new TypeCast(new ObjectTypeSpec(child.type.getName()),(Expr)model);
+					methodCall.addArg(typeCast1);
+				}
+				else
+				{
+					methodCall.addArg((Expr)model);
+				}
 			}
 		}
 		methodCall.setFptrType(funcPtrType);
