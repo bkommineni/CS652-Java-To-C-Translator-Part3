@@ -12,7 +12,7 @@ public class MethodCall extends Expr {
     public String name;
     public String classname;
     @ModelElement public Expr receiver;
-    @ModelElement public TypeSpec receiverType;
+    @ModelElement public TypeCast receiverType;
     @ModelElement public FuncPtrType fptrType;
     @ModelElement public List<Expr> args = new ArrayList<>();
 
@@ -25,7 +25,7 @@ public class MethodCall extends Expr {
         this.receiver = receiver;
     }
 
-    public void setReceiverType(TypeSpec receiverType) {
+    public void setReceiverType(TypeCast receiverType) {
         this.receiverType = receiverType;
     }
 

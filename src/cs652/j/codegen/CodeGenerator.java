@@ -4,18 +4,19 @@ import cs652.j.codegen.model.*;
 import cs652.j.parser.JBaseVisitor;
 import cs652.j.parser.JParser;
 import cs652.j.semantics.JClass;
-import cs652.j.semantics.JField;
 import cs652.j.semantics.JMethod;
+import cs652.j.semantics.JPrimitiveType;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
+
+	public static final Type JINT_TYPE = new JPrimitiveType("int");
+	public static final Type JFLOAT_TYPE = new JPrimitiveType("float");
+	public static final Type JVOID_TYPE = new JPrimitiveType("void");
+
 	public STGroup templates;
 	public String fileName;
 
@@ -53,16 +54,16 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			for(FieldSymbol field : jClass.getFields())
 			{
 				VarDef varDef = null;
-				if(field.getType().getName().equals("int") ||
-						field.getType().getName().equals("float") )
+				if(field.getType().getName().equals(JINT_TYPE.getName()) ||
+						field.getType().getName().equals(JFLOAT_TYPE.getName()) )
 				{
 					PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(field.getType().getName());
-					varDef = new VarDef(typeSpec,field.getName());
+					varDef = new VarDef(typeSpec,new VarRef(field.getName()));
 				}
 				else
 				{
 					ObjectTypeSpec typeSpec = new ObjectTypeSpec(field.getType().getName());
-					varDef = new VarDef(typeSpec,field.getName());
+					varDef = new VarDef(typeSpec,new VarRef(field.getName()));
 				}
 				classDef.addField(varDef);
 			}
@@ -122,9 +123,9 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		FuncName funcName = new FuncName(currentClass.getName(),ctx.ID().getText());
 
 		MethodDef methodDef;
-		if(ctx.getChild(0).getText().equals("int") ||
-				ctx.getChild(0).getText().equals("float") ||
-				ctx.getChild(0).getText().equals("void"))
+		if(ctx.getChild(0).getText().equals(JINT_TYPE.getName()) ||
+				ctx.getChild(0).getText().equals(JFLOAT_TYPE.getName()) ||
+				ctx.getChild(0).getText().equals(JVOID_TYPE.getName()))
 		{
 			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.getChild(0).getText());
 			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
@@ -135,7 +136,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
 		}
 		ObjectTypeSpec typeSpec = new ObjectTypeSpec(currentClass.getName());
-		VarDef varDef = new VarDef(typeSpec,"this");
+		VarDef varDef = new VarDef(typeSpec,new ThisRef());
 		methodDef.addArg(varDef);
 		if(ctx.formalParameters().formalParameterList() != null)
 		{
@@ -194,16 +195,16 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitFieldDeclaration(JParser.FieldDeclarationContext ctx) {
 		VarDef varDef;
-		if(ctx.getChild(0).getText().equals("int") ||
-				ctx.getChild(0).getText().equals("float"))
+		if(ctx.getChild(0).getText().equals(JINT_TYPE.getName()) ||
+				ctx.getChild(0).getText().equals(JFLOAT_TYPE.getName()))
 		{
 			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.getChild(0).getText());
-			varDef = new VarDef(typeSpec,ctx.ID().getText());
+			varDef = new VarDef(typeSpec,new VarRef(ctx.ID().getText()));
 		}
 		else
 		{
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.getChild(0).getText());
-			varDef = new VarDef(typeSpec,ctx.ID().getText());
+			varDef = new VarDef(typeSpec,new VarRef(ctx.ID().getText()));
 		}
 		return varDef;
 	}
@@ -211,16 +212,16 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitFormalParameter(JParser.FormalParameterContext ctx) {
 		VarDef varDef = null;
-		if(ctx.getChild(0).getText().equals("int") ||
-				ctx.getChild(0).getText().equals("float"))
+		if(ctx.getChild(0).getText().equals(JINT_TYPE.getName()) ||
+				ctx.getChild(0).getText().equals(JFLOAT_TYPE.getName()))
 		{
 			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.getChild(0).getText());
-			varDef = new VarDef(typeSpec,ctx.ID().getText());
+			varDef = new VarDef(typeSpec,new VarRef(ctx.ID().getText()));
 		}
 		else
 		{
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.getChild(0).getText());
-			varDef = new VarDef(typeSpec,ctx.ID().getText());
+			varDef = new VarDef(typeSpec,new VarRef(ctx.ID().getText()));
 		}
 		return varDef;
 	}
@@ -228,16 +229,16 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitLocalVarStat(JParser.LocalVarStatContext ctx) {
 		VarDef varDef = null;
-		if(ctx.localVariableDeclaration().jType().getText().equals("int") ||
-				ctx.localVariableDeclaration().jType().getText().equals("float"))
+		if(ctx.localVariableDeclaration().jType().getText().equals(JINT_TYPE.getName()) ||
+				ctx.localVariableDeclaration().jType().getText().equals(JFLOAT_TYPE.getName()))
 		{
 			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.localVariableDeclaration().jType().getText());
-			varDef = new VarDef(typeSpec,ctx.localVariableDeclaration().ID().getText());
+			varDef = new VarDef(typeSpec,new VarRef(ctx.localVariableDeclaration().ID().getText()));
 		}
 		else
 		{
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.localVariableDeclaration().jType().getText());
-			varDef = new VarDef(typeSpec,ctx.localVariableDeclaration().ID().getText());
+			varDef = new VarDef(typeSpec,new VarRef(ctx.localVariableDeclaration().ID().getText()));
 		}
 		return varDef;
 	}
@@ -255,8 +256,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		Expr right = null;
 
 		TypeCast typeCast;
-		if(ctx.expression(0).type.getName().equals("int") ||
-				ctx.expression(0).type.getName().equals("float"))
+		if(ctx.expression(0).type.getName().equals(JINT_TYPE.getName()) ||
+				ctx.expression(0).type.getName().equals(JFLOAT_TYPE.getName()))
 		{
 			right = (Expr) visit(ctx.expression(1));
 		}
@@ -285,9 +286,9 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		MethodCall methodCall = new MethodCall(ctx.ID().getText(),ctx.expression().type.getName());
 		methodCall.setReceiver((Expr)visit(ctx.expression()));
 		FuncPtrType funcPtrType = null;
-		if(ctx.type.getName().equals("int") ||
-				ctx.type.getName().equals("float") ||
-				ctx.type.getName().equals("void"))
+		if(ctx.type.getName().equals(JINT_TYPE.getName()) ||
+				ctx.type.getName().equals(JFLOAT_TYPE.getName()) ||
+				ctx.type.getName().equals(JVOID_TYPE.getName()))
 		{
 			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.type.getName());
 			funcPtrType = new FuncPtrType(typeSpec);
@@ -302,15 +303,15 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		ObjectTypeSpec typeSpec = new ObjectTypeSpec(jMethod.getEnclosingScope().getName());
 		funcPtrType.addArgType(typeSpec);
 		TypeCast typeCast = new TypeCast(typeSpec,(Expr) visit(ctx.expression()));
-		methodCall.addArg(typeCast);
+		methodCall.setReceiverType(typeCast);
 
 		if(ctx.expressionList() != null)
 		{
 			for(JParser.ExpressionContext child : ctx.expressionList().expression())
 			{
 				OutputModelObject model = visit(child);
-				if(child.type.getName().equals("int") ||
-						child.type.getName().equals("float"))
+				if(child.type.getName().equals(JINT_TYPE.getName()) ||
+						child.type.getName().equals(JFLOAT_TYPE.getName()))
 				{
 					PrimitiveTypeSpec primitiveTypeSpec = new PrimitiveTypeSpec(child.type.getName());
 					funcPtrType.addArgType(primitiveTypeSpec);
@@ -371,8 +372,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitPrintStringStat(JParser.PrintStringStatContext ctx) {
-		PrintStringStat printStringStat = new PrintStringStat(ctx.STRING().getText());
-		return printStringStat;
+		return new PrintStringStat(ctx.STRING().getText());
 	}
 
 	@Override
@@ -402,12 +402,11 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitMethodCall(JParser.MethodCallContext ctx) {
 		MethodCall methodCall = new MethodCall(ctx.ID().getText(),currentClass.getName());
-		VarRef varRef = new VarRef("this");
-		methodCall.setReceiver(varRef);
+		methodCall.setReceiver(new ThisRef());
 		FuncPtrType funcPtrType = null;
-		if(ctx.type.getName().equals("int") ||
-				ctx.type.getName().equals("float") ||
-				ctx.type.getName().equals("void"))
+		if(ctx.type.getName().equals(JINT_TYPE.getName()) ||
+				ctx.type.getName().equals(JFLOAT_TYPE.getName()) ||
+				ctx.type.getName().equals(JVOID_TYPE.getName()))
 		{
 			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(ctx.type.getName());
 			funcPtrType = new FuncPtrType(typeSpec);
@@ -421,15 +420,15 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		ObjectTypeSpec typeSpec = new ObjectTypeSpec(jMethod.getEnclosingScope().getName());
 		funcPtrType.addArgType(typeSpec);
 		TypeCast typeCast = new TypeCast(typeSpec,new ThisRef());
-		methodCall.addArg(typeCast);
+		methodCall.setReceiverType(typeCast);
 
 		if(ctx.expressionList() != null)
 		{
 			for(JParser.ExpressionContext child : ctx.expressionList().expression())
 			{
 				OutputModelObject model = visit(child);
-				if(child.type.getName().equals("int") ||
-						child.type.getName().equals("float"))
+				if(child.type.getName().equals(JINT_TYPE.getName()) ||
+						child.type.getName().equals(JFLOAT_TYPE.getName()))
 				{
 					PrimitiveTypeSpec primitiveTypeSpec = new PrimitiveTypeSpec(child.type.getName());
 					funcPtrType.addArgType(primitiveTypeSpec);
@@ -464,26 +463,22 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 
 	@Override
 	public OutputModelObject visitBlockStat(JParser.BlockStatContext ctx) {
-		Block block = (Block) visit(ctx.block());
-		return block;
+		return visit(ctx.block());
 	}
 
 	@Override
 	public OutputModelObject visitThisRef(JParser.ThisRefContext ctx) {
-		ThisRef thisRef = new ThisRef();
-		return thisRef;
+		return new ThisRef();
 	}
 
 	@Override
 	public OutputModelObject visitNullRef(JParser.NullRefContext ctx) {
-		NullRef nullRef = new NullRef();
-		return nullRef;
+		return new NullRef();
 	}
 
 	@Override
 	public OutputModelObject visitFieldRef(JParser.FieldRefContext ctx) {
-		FieldRef fieldRef = new FieldRef(ctx.ID().getText() ,(Expr)visit(ctx.expression()));
-		return fieldRef;
+		return new FieldRef(ctx.ID().getText() ,(Expr)visit(ctx.expression()));
 	}
 
 	@Override

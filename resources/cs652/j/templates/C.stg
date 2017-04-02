@@ -62,7 +62,7 @@ Block(block, locals, instrs) ::= <<
 <instrs;separator="\n">
 >>
 
-VarDef(var, type)   ::= "<type> <var.id>"
+VarDef(var, type, id)   ::= "<type> <id>"
 
 FuncName(f)         ::= "<f.className>_<f.fName>"
 
@@ -99,7 +99,7 @@ VarRef(v)           ::= "<v.id>"
 FieldRef(f, object) ::= "<object>-><f.id>"
 ThisRef(t)          ::= "this"
 MethodCall(m, receiver, receiverType, fptrType, args) ::= <<
-(*(<fptrType>)(*(<receiver>)->clazz->_vtable)[<m.classname>_<m.name>_SLOT])(<args;separator={,}>)
+(*(<fptrType>)(*(<receiver>)->clazz->_vtable)[<m.classname>_<m.name>_SLOT])(<receiverType><args : {arg |  ,<arg>}>)
 >>
 
 FuncPtrType(f, returnType, argTypes) ::= "<returnType> (*)(<argTypes;separator={,}>)"

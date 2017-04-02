@@ -7,9 +7,9 @@ import org.stringtemplate.v4.ST;
  */
 public class VarDef extends OutputModelObject {
     @ModelElement public TypeSpec type;
-    public String id;
+    @ModelElement public Expr id;
 
-    public VarDef(TypeSpec type, String id) {
+    public VarDef(TypeSpec type, Expr id) {
         this.type = type;
         this.id = id;
     }
