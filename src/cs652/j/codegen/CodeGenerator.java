@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
+import sun.jvm.hotspot.debugger.cdbg.Sym;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -365,7 +366,31 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		for(JParser.ExpressionContext child : ctx.expressionList().expression())
 		{
 			OutputModelObject model = visit(child);
-			printStat.addArg((Expr)model);
+
+			if((model instanceof VarRef) && !currentScope.getName().equals("main"))
+			{
+				boolean check = false;
+				for(Symbol symbol : currentScope.getEnclosingScope().getSymbols())
+				{
+					if(symbol.getName().equals(((VarRef) model).id))
+					{
+						check = true;
+					}
+				}
+				if(!check)
+				{
+					FieldRef fieldRef = new FieldRef(((VarRef) model).id,new ThisRef());
+					printStat.addArg(fieldRef);
+				}
+				else
+				{
+					printStat.addArg((Expr) model);
+				}
+			}
+			else
+			{
+				printStat.addArg((Expr) model);
+			}
 		}
 		return printStat;
 	}
@@ -375,9 +400,34 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		ReturnStat returnStat = null;
 		if(ctx.expression() != null)
 		{
-			returnStat = new ReturnStat((Expr)visit(ctx.expression()));
+			OutputModelObject model = visit(ctx.expression());
+			if((model instanceof VarRef))
+			{
+				boolean check = false;
+				for(Symbol symbol : currentScope.getEnclosingScope().getSymbols())
+				{
+					if(symbol.getName().equals(((VarRef) model).id))
+					{
+						check = true;
+					}
+				}
+				if(!check)
+				{
+					FieldRef fieldRef = new FieldRef(((VarRef) model).id,new ThisRef());
+					returnStat = new ReturnStat(fieldRef);
+				}
+				else
+				{
+					returnStat = new ReturnStat((Expr) model);
+				}
+			}
+			else
+			{
+				returnStat = new ReturnStat((Expr) model);
+			}
 		}
-		else {
+		else
+		{
 			returnStat = new ReturnStat();
 		}
 		return returnStat;
@@ -401,7 +451,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(ctx.type.getName());
 			funcPtrType = new FuncPtrType(typeSpec);
 		}
-		ObjectTypeSpec typeSpec = new ObjectTypeSpec(currentClass.getName());
+		JMethod jMethod = (JMethod) currentScope.resolve(ctx.ID().getText());
+		ObjectTypeSpec typeSpec = new ObjectTypeSpec(jMethod.getEnclosingScope().getName());
 		funcPtrType.addArgType(typeSpec);
 		TypeCast typeCast = new TypeCast(typeSpec,new ThisRef());
 		methodCall.addArg(typeCast);
