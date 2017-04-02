@@ -464,6 +464,12 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	}
 
 	@Override
+	public OutputModelObject visitBlockStat(JParser.BlockStatContext ctx) {
+		Block block = (Block) visit(ctx.block());
+		return block;
+	}
+
+	@Override
 	public OutputModelObject visitThisRef(JParser.ThisRefContext ctx) {
 		ThisRef thisRef = new ThisRef();
 		return thisRef;
