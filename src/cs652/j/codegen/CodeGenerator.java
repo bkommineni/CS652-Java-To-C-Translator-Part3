@@ -151,14 +151,21 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(methodType.getName());
 			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
 		}
-		ObjectTypeSpec typeSpec = new ObjectTypeSpec(currentClass.getName());
-		VarDef varDef = new VarDef(typeSpec,new ThisRef());
-		methodDef.addArg(varDef);
-		if(ctx.formalParameters().formalParameterList() != null)
+		for(Symbol symbol : jMethod.getSymbols())
 		{
-			for (JParser.FormalParameterContext child : ctx.formalParameters().formalParameterList().formalParameter()) {
-				OutputModelObject model = visit(child);
-				methodDef.addArg((VarDef) model);
+			VariableSymbol var = (VariableSymbol) symbol;
+			Type varType = var.getType();
+			if(varType.getName().equals(JINT_TYPE.getName()) ||
+					varType.getName().equals(JFLOAT_TYPE.getName()) ||
+					varType.getName().equals(JVOID_TYPE.getName()))
+			{
+				PrimitiveTypeSpec typeSpec1 = new PrimitiveTypeSpec(varType.getName());
+				methodDef.addArg(new VarDef(typeSpec1,new VarRef(var.getName())));
+			}
+			else
+			{
+				ObjectTypeSpec typeSpec1 = new ObjectTypeSpec(varType.getName());
+				methodDef.addArg(new VarDef(typeSpec1,new VarRef(var.getName())));
 			}
 		}
 		methodDef.setBlock((Block)visit(ctx.methodBody().block()));
@@ -219,25 +226,6 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		else
 		{
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(fieldType.getName());
-			varDef = new VarDef(typeSpec,new VarRef(ctx.ID().getText()));
-		}
-		return varDef;
-	}
-
-	@Override
-	public OutputModelObject visitFormalParameter(JParser.FormalParameterContext ctx) {
-		VarDef varDef = null;
-		JVar jVar = (JVar) currentScope.resolve(ctx.ID().getText());
-		Type jVarType = jVar.getType();
-		if(jVarType.getName().equals(JINT_TYPE.getName()) ||
-				jVarType.getName().equals(JFLOAT_TYPE.getName()))
-		{
-			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(jVarType.getName());
-			varDef = new VarDef(typeSpec,new VarRef(ctx.ID().getText()));
-		}
-		else
-		{
-			ObjectTypeSpec typeSpec = new ObjectTypeSpec(jVarType.getName());
 			varDef = new VarDef(typeSpec,new VarRef(ctx.ID().getText()));
 		}
 		return varDef;
@@ -477,8 +465,16 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			}
 			else
 			{
-				ObjectTypeSpec typeSpec1 = new ObjectTypeSpec(jMethod.getEnclosingScope().getName());
-				TypeCast typeCast = new TypeCast(typeSpec1,new ThisRef());
+				ObjectTypeSpec typeSpec1 = new ObjectTypeSpec(varType.getName());
+				TypeCast typeCast = null;
+				if(var.getName().equals("this"))
+				{
+					typeCast = new TypeCast(typeSpec1,new ThisRef());
+				}
+				else
+				{
+					typeCast = new TypeCast(typeSpec1,new VarRef(var.getName()));
+				}
 				methodCall.setReceiverType(typeCast);
 				funcPtrType.addArgType(typeSpec1);
 			}
