@@ -1,0 +1,53 @@
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building vtable code generation 1.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-enforcer-plugin:1.2:enforce (enforce-maven) @ vtable ---
+[INFO] 
+[INFO] --- antlr4-maven-plugin:4.6:antlr4 (antlr) @ vtable ---
+[INFO] ANTLR 4: Processing source directory /Users/parrt/grading/cs652/S17/vtable-bkommineni/grammars
+[INFO] Processing grammar: cs652/j/parser/J.g4
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ vtable ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 131 resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ vtable ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 48 source files to /Users/parrt/grading/cs652/S17/vtable-bkommineni/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ vtable ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /Users/parrt/grading/cs652/S17/vtable-bkommineni/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ vtable ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 4 source files to /Users/parrt/grading/cs652/S17/vtable-bkommineni/target/test-classes
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.12.4:test (default-test) @ vtable ---
+[INFO] Surefire report directory: /Users/parrt/grading/cs652/S17/vtable-bkommineni/target/surefire-reports
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running cs652.j.TestCGen
+Working dir: /var/folders/93/9kzk2ccm8xj8k70059b28jk80000gp/T/junit6388523471546858494
+Tests run: 52, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.997 sec
+Running cs652.j.TestExprTypes
+Tests run: 26, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 sec
+Running cs652.j.TestSymbolDefs
+Tests run: 26, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 sec
+
+Results :
+
+Tests run: 104, Failures: 0, Errors: 0, Skipped: 0
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 4.753 s
+[INFO] Finished at: 2017-04-11T14:55:45-07:00
+[INFO] Final Memory: 23M/370M
+[INFO] ------------------------------------------------------------------------
