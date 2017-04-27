@@ -53,6 +53,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			for(FieldSymbol field : jClass.getFields())
 			{
 				VarDef varDef = null;
+//  you should not be testing whether their names are "int" using string compare. you computed types and compute type phase right?
 				if(field.getType().getName().equals(JINT_TYPE.getName()) ||
 						field.getType().getName().equals(JFLOAT_TYPE.getName()) )
 				{
@@ -86,10 +87,12 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		//if superclass present;
 		if(ctx.superClass != null)
 		{
+// whoa. multiple loops? why are you looking at the superclass? shouldn't the symbol table answer questions for you properly?
 			/**
 			 * getting all superclass methods and resolving from current scope; so that overridden methods
 			 * when resolved return the enclosing scope in which they are implemented
 			 */
+// resolve does this automatically
 			for(MethodSymbol methodSymbol :currentClass.getSuperClassScope().getMethods())
 			{
 				JMethod jMethod = (JMethod) currentScope.resolve(methodSymbol.getName());
@@ -126,6 +129,10 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 				classDef.addFuncVtable(funcName);
 			}
 		}
+// all of that above code should be simply
+//		Set<MethodSymbol> visibleMethods = getMethods();
+//		for (MemberSymbol s : visibleMethods) {...}
+
 		currentScope = currentScope.getEnclosingScope();
 		return classDef;
 	}
@@ -139,10 +146,12 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		FuncName funcName = new FuncName(currentClass.getName(),ctx.ID().getText());
 		JMethod jMethod = (JMethod) currentClass.resolve(ctx.ID().getText());
 		Type methodType = jMethod.getType();
+// you should not be testing types as strings
 		if(methodType.getName().equals(JINT_TYPE.getName()) ||
 				methodType.getName().equals(JFLOAT_TYPE.getName()) ||
 				methodType.getName().equals(JVOID_TYPE.getName()))
 		{
+// you know the type. why are you creating it again? we have a compute type phase
 			PrimitiveTypeSpec typeSpec = new PrimitiveTypeSpec(methodType.getName());
 			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
 		}
@@ -151,6 +160,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(methodType.getName());
 			methodDef = new MethodDef(currentClass.getName(),funcName,typeSpec);
 		}
+// shouldn't you be calling visitFormalParameter() somewhere?
+
 		for(Symbol symbol : jMethod.getSymbols())
 		{
 			VariableSymbol var = (VariableSymbol) symbol;
@@ -217,6 +228,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		VarDef varDef = null;
 		JField jField = (JField) currentScope.resolve(ctx.ID().getText());
 		Type fieldType = jField.getType();
+// remove all of these examples of code that are testing strings. furthermore, you don't need to test the type. Just use it
 		if(fieldType.getName().equals(JINT_TYPE.getName()) ||
 				fieldType.getName().equals(JFLOAT_TYPE.getName()))
 		{
@@ -231,6 +243,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		return varDef;
 	}
 
+// wow.  Mine is two lines long. Get rid of the type testing.
 	@Override
 	public OutputModelObject visitLocalVarStat(JParser.LocalVarStatContext ctx) {
 		VarDef varDef = null;
@@ -314,6 +327,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 			ObjectTypeSpec typeSpec = new ObjectTypeSpec(methodType.getName());
 			funcPtrType = new FuncPtrType(typeSpec);
 		}
+// why are you walking the argument list multiple times? here and then in the next loop?
 		for(Symbol symbol : jMethod.getSymbols())
 		{
 			VariableSymbol var = (VariableSymbol) symbol;
@@ -366,7 +380,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		 * with implicit this parameter of its own class type(FieldRefs), if not declared in
 		 * local scope or method scope
 		 */
-		if(!currentScope.getName().equals("main")) {
+		if(!currentScope.getName().equals("main")) { // you should not be testing whether you are in the main program
+// you only care whether it is a field or a variable
 			Symbol symbol = currentScope.resolve(ctx.ID().getText());
 			if (symbol.getScope().getName().equals(currentScope.getName()) ||
 					symbol.getScope().getName().equals(currentScope.getEnclosingScope().getName())) {
@@ -385,6 +400,7 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 	@Override
 	public OutputModelObject visitLiteralRef(JParser.LiteralRefContext ctx) {
 		LiteralRef literalRef = null;
+// use ctx.getText() and there is no need to separate the cases
 		if(ctx.INT() != null)
 		{
 			literalRef = new LiteralRef(ctx.INT().getText());
@@ -451,6 +467,8 @@ public class CodeGenerator extends JBaseVisitor<OutputModelObject> {
 		 * implement polymorphism using resolve from the type of receiver(as
 		 * this is a method call;receiver is object of its own class(this));
 		 */
+
+// this is almost exactly like your qualified method call so re-factor to share code
 
 		for(Symbol symbol : jMethod.getSymbols())
 		{
