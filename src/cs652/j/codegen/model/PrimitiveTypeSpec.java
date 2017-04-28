@@ -1,6 +1,5 @@
 package cs652.j.codegen.model;
 
-import com.sun.codemodel.internal.JType;
 import org.antlr.symtab.Type;
 import org.stringtemplate.v4.ST;
 
