@@ -66,8 +66,8 @@ VarDef(var, type, id)   ::= "<type> <id>"
 
 FuncName(f)         ::= "<f.className>_<f.fName>"
 
-ObjectTypeSpec(o)   ::= "<o.name> *"
-PrimitiveTypeSpec(p)::= "<p.name>"
+ObjectTypeSpec(o)   ::= "<o.type.name> *"
+PrimitiveTypeSpec(p)::= "<p.type.name>"
 
 AssignStat(a,left,right) ::= "<left> = <right>;"
 PrintStringStat(p)  ::= "printf(<p.printStat>);"

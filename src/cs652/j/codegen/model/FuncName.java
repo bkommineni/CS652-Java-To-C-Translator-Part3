@@ -2,10 +2,12 @@ package cs652.j.codegen.model;
 
 import org.stringtemplate.v4.ST;
 
+import java.util.Comparator;
+
 /**
  * Created by bharu on 3/23/17.
  */
-public class FuncName extends OutputModelObject {
+public class FuncName extends OutputModelObject implements Comparable<FuncName> {
     public String fName;
     public String className;
     public int slot;
@@ -18,5 +20,10 @@ public class FuncName extends OutputModelObject {
     public void setSlot(int slot)
     {
         this.slot = slot;
+    }
+
+    @Override
+    public int compareTo(FuncName o) {
+        return (this.slot - o.slot);
     }
 }
